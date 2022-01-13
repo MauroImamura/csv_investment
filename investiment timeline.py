@@ -14,7 +14,7 @@ def main():
 
       print("Recording file ready.")
       print("...")
-      print("Use the invest function for new recordings.")
+      print("Use invest/calculate functions to record or evaluate investments.")
       
 def create_statement():
       # generates a new statement file for investment recording.
@@ -30,13 +30,10 @@ def invest():
       # write a new line into a csv file called statement.
 
       # ask for investmet details
-      inp_date = input('Investment date (dd/mm/yyyy): ')
+      date = input('Investment date (dd/mm/yyyy): ')
       name = input('Investment name or description: ')
       amount = float(input('Amount ($): ').replace(',','.'))
       rate = float(input('Interest rate (%): ').replace(',','.'))
-
-      # correct date format
-      date = convert_date(inp_date)
 
       # list of investiment information
       inp_vector = [date,name,amount,rate]
@@ -55,20 +52,21 @@ def calculate():
       result = 0.0
       
       # set ref date type and format
-      inp_date = input('Reference date(dd/mm/yyyy): ')
-      date = convert_date(inp_date)
+      date = input('Reference date(dd/mm/yyyy): ')
+      date_as_date = datetime.strptime(date,'%d/%m/%Y')
 
       # read csv statement file and calculate investment worth
       with open('statement.csv','r') as f:
             reader = csv.reader(f)
             next(reader)
             for row in reader:
-                  print(row[0])
+                  initial_date = datetime.strptime(row[0],'%d/%m/%Y')
+                  if date_as_date > initial_date:
+                        t = (5/7)*(date_as_date - initial_date).days
+                        current_amount = float(row[2])*(1+(float(row[3])/100))**(t/252)
+                        print('Resulting amount of ', row[1], ': ', format(current_amount,'.2f'))
+                        result += current_amount
 
-def convert_date(str_date):
-      # set date type and format
-      [dd,mm,yyyy] = [int(str_date[0:2]),int(str_date[3:5]),int(str_date[6:10])]
-      date = datetime(yyyy,mm,dd)
-      return date
+      print('Resulting total amount: R$', format(result, '.2f'))
 
 main()
