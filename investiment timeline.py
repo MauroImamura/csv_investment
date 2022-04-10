@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 import urllib.request
 import numpy
+from bs4 import BeautifulSoup
 
 def main():
       # execute script
@@ -88,14 +89,37 @@ def show():
 def get_holidays():
       #get the list of holidays and their dates on ANBIMA's library
 
-      hol_hist = {}
+      year_list = []
+      hol_hist = []
+
+      anbima_link = 'https://www.anbima.com.br/feriados/'
+      anbima_html = urllib.request.urlopen(anbima_link).read()
+      for element in BeautifulSoup(anbima_html,'html.parser').findAll('a'):
+            if 'Ano' in element:
+                  year_list.append(elemet.replace('Ano ',''))
       
-      for year in range(2001,2078):
+      for year in year_list:
             link = 'https://www.anbima.com.br/feriados/fer_nacionais/{}.asp'.format(year)
             with urllib.request.urlopen(link) as f:
                   content = f.read()
                   dec = content.decode()
-            hol_hist.update({year:dec})
+                  sp = BeautifulSoup(dec)
+                  table = sp.find('table',{"class" : "interna"})
+                  for row in table.findAll('tr'):
+                        dt = str(row.findAll('td')[0].text)
+                        for row in table.findAll('tr'):
+                              try:
+                                    date_str = str(row.findAll('td')[0].text)
+                                    dt = date_str.split('/')
+                                    dt[0] = dt[0].zfill(2)
+                                    dt[1] = dt[1].zfill(2)
+                                    if len(dt[2]) < 4:
+                                          dt[2] = '20'+dt[2]
+                                    dt = '/'.join(dt)
+                                    hol_date = datetime.strptime(dt,'%d/%m/%Y')
+                                    hol_hist.append(hol_date)
+                              except IndexError:
+                                    True
       return hol_hist
 
 main()
